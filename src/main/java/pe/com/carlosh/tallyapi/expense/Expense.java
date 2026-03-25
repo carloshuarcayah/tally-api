@@ -46,12 +46,16 @@ public class Expense {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private boolean active;
+
     public Expense(BigDecimal amount, String description, LocalDate expenseDate, User user, Category category) {
         this.amount = amount;
         this.description = description;
         this.expenseDate = expenseDate;
         this.user = user;
         this.category = category;
+        this.active=true;
     }
 
     public void update(BigDecimal amount, String description, LocalDate expenseDate, Category category) {
@@ -59,5 +63,13 @@ public class Expense {
         this.description = description;
         this.expenseDate = expenseDate;
         this.category = category;
+    }
+
+    public void activate(){
+        this.active=true;
+    }
+
+    public void deactivate(){
+        this.active=false;
     }
 }

@@ -55,7 +55,7 @@ public class UserService {
         );
 
         User user = userRepository.findByEmail(req.email())
-                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("User does not exists"));
 
         String jwtToken = jwtService.generateToken(user);
         return new LoginResponseDTO(jwtToken);

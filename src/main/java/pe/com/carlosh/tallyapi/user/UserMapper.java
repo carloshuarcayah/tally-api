@@ -6,13 +6,13 @@ import pe.com.carlosh.tallyapi.user.dto.UserResponseDTO;
 public class UserMapper {
 
 
-    public static User toEntity(UserRequestDTO req) {
+    public static User toEntity(UserRequestDTO req, String encodedPassword) {
 
         return new User(
                 req.email(),
                 req.phone(),
                 req.username(),
-                req.password(),
+                encodedPassword,
                 req.firstName(),
                 req.lastName()
         );

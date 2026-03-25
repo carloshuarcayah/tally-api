@@ -30,14 +30,7 @@ public class UserService {
             throw new AlreadyExistsException("Email already register");
         }
 
-        User user = new User(
-                req.email(),
-                req.phone(),
-                req.username(),
-                passwordEncoder.encode(req.password()),
-                req.firstName(),
-                req.lastName());
-
+        User user = UserMapper.toEntity(req,passwordEncoder.encode(req.password()));
 
         String jwtToken = jwtService.generateToken(userRepository.save(user));
         return new LoginResponseDTO(jwtToken);

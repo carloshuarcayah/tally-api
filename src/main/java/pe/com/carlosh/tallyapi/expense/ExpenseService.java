@@ -22,11 +22,11 @@ public class ExpenseService {
     private final UserRepository userRepository;
 
     public Page<ExpenseResponseDTO> findByUser(Long userId, Pageable pageable) {
-        return expenseRepository.findByUserId(userId, pageable).map(ExpenseMapper::toResponse);
+        return expenseRepository.findByUserIdAndActiveTrue(userId, pageable).map(ExpenseMapper::toResponse);
     }
 
     public Page<ExpenseResponseDTO> findByUserAndCategory(Long userId, Long categoryId, Pageable pageable) {
-        return expenseRepository.findByUserIdAndCategoryId(userId, categoryId, pageable).map(ExpenseMapper::toResponse);
+        return expenseRepository.findByUserIdAndActiveTrueAndCategoryId(userId, categoryId, pageable).map(ExpenseMapper::toResponse);
     }
 
     public ExpenseResponseDTO findById(Long id, Long userId) {

@@ -8,5 +8,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     Page<Expense> findByUserId(Long userId, Pageable pageable);
+    Page<Expense> findByUserIdAndActiveTrue(Long userId, Pageable pageable);
     Page<Expense> findByUserIdAndCategoryId(Long userId, Long categoryId, Pageable pageable);
+    Page<Expense> findByUserIdAndActiveTrueAndCategoryId(Long userId, Long categoryId, Pageable pageable);
 }

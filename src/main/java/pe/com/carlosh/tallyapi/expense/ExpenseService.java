@@ -8,10 +8,13 @@ import org.springframework.transaction.annotation.Transactional;
 import pe.com.carlosh.tallyapi.category.Category;
 import pe.com.carlosh.tallyapi.category.CategoryRepository;
 import pe.com.carlosh.tallyapi.exception.ResourceNotFoundException;
+import pe.com.carlosh.tallyapi.expense.dto.ExpenseListResponseDTO;
 import pe.com.carlosh.tallyapi.expense.dto.ExpenseRequestDTO;
 import pe.com.carlosh.tallyapi.expense.dto.ExpenseResponseDTO;
 import pe.com.carlosh.tallyapi.user.User;
 import pe.com.carlosh.tallyapi.user.UserRepository;
+
+import java.math.BigDecimal;
 
 @Service
 @RequiredArgsConstructor
@@ -25,14 +28,28 @@ public class ExpenseService {
         return expenseRepository.findByUserIdAndActiveTrue(userId, pageable).map(ExpenseMapper::toResponse);
     }
 
-    public Page<ExpenseResponseDTO> findByUserAndCategory(Long userId, Long categoryId, Pageable pageable) {
-        return expenseRepository.findByUserIdAndActiveTrueAndCategoryId(userId, categoryId, pageable).map(ExpenseMapper::toResponse);
+    //SOLO EXPENSES ACTIVAS
+    public ExpenseListResponseDTO findByUserIdAndCategoryId(Long userId, Long categoryId, Pageable pageable) {
+        Page<ExpenseResponseDTO> expenses;
+        BigDecimal total;
+
+        if(categoryId!=null){
+            expenses = expenseRepository.findByUserIdAndActiveTrueAndCategoryId(userId, categoryId, pageable).map(ExpenseMapper::toResponse);
+            total = expenseRepository.sumTotalByUserIdAndCategoryId(userId, categoryId);
+        }
+        else{
+            expenses = expenseRepository.findByUserId(userId,pageable).map(ExpenseMapper::toResponse);
+            total = expenseRepository.sumTotalByUserId(userId);
+        }
+
+        return new ExpenseListResponseDTO(expenses,total);
     }
 
     public ExpenseResponseDTO findById(Long id, Long userId) {
         Expense expense = findByIdAndUserOrThrow(id, userId);
         return ExpenseMapper.toResponse(expense);
     }
+
 
     @Transactional
     public ExpenseResponseDTO create(ExpenseRequestDTO req, Long userId) {
@@ -79,7 +96,11 @@ public class ExpenseService {
                 .orElseThrow(() -> new ResourceNotFoundException("Expense not found with id: " + id));
     }
 
-    public java.math.BigDecimal getTotalByUser(Long userId) {
+    public BigDecimal getTotalByUser(Long userId) {
         return expenseRepository.sumTotalByUserId(userId);
+    }
+
+    public BigDecimal getTotalByCategory(Long userId, Long categoryId) {
+        return expenseRepository.sumTotalByUserIdAndCategoryId(userId,categoryId);
     }
 }

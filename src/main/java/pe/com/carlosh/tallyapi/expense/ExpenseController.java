@@ -2,7 +2,6 @@ package pe.com.carlosh.tallyapi.expense;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pe.com.carlosh.tallyapi.expense.dto.ExpenseRequestDTO;
 import pe.com.carlosh.tallyapi.expense.dto.ExpenseResponseDTO;
+import pe.com.carlosh.tallyapi.expense.dto.ExpenseListResponseDTO;
 import pe.com.carlosh.tallyapi.user.User;
 
 import java.math.BigDecimal;
@@ -20,17 +20,16 @@ import java.math.BigDecimal;
 public class ExpenseController {
 
     private final ExpenseService expenseService;
+
+
+    //FIND ALL AND FIND ALL BY CATEGORY
     @GetMapping
-    public ResponseEntity<Page<ExpenseResponseDTO>> findAll(
+    public ResponseEntity<ExpenseListResponseDTO> findAll(
             @RequestParam(required = false) Long categoryId,
             @AuthenticationPrincipal User user,
             Pageable pageable) {
 
-        // if URL includes (?categoryId=2), filtramos
-        if (categoryId != null) {
-            return ResponseEntity.ok(expenseService.findByUserAndCategory(user.getId(), categoryId, pageable));
-        }
-        return ResponseEntity.ok(expenseService.findByUser(user.getId(), pageable));
+        return ResponseEntity.ok(expenseService.findByUserIdAndCategoryId(user.getId(),categoryId, pageable));
     }
 
     @GetMapping("/{id}")
@@ -76,5 +75,10 @@ public class ExpenseController {
     @GetMapping("/total")
     public ResponseEntity<BigDecimal> getTotal(@AuthenticationPrincipal User user) {
         return ResponseEntity.ok(expenseService.getTotalByUser(user.getId()));
+    }
+
+    @GetMapping("/total/{categoryId}")
+    public ResponseEntity<BigDecimal> getTotalByCategory(@AuthenticationPrincipal User user, @PathVariable Long categoryId) {
+        return ResponseEntity.ok(expenseService.getTotalByCategory(user.getId(),categoryId));
     }
 }

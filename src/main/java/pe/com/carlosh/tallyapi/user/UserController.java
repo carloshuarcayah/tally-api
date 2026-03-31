@@ -24,4 +24,11 @@ public class UserController {
     public ResponseEntity<UserResponseDTO> findMe(@AuthenticationPrincipal User user){
         return ResponseEntity.ok(userService.findById(user.getId()));
     }
+
+    @PatchMapping("/me/onboarding")
+    public ResponseEntity<Void> completeOnboarding(@AuthenticationPrincipal User user) {
+        userService.completeOnboarding(user.getId());
+        return ResponseEntity.ok().build();
+    }
+
 }

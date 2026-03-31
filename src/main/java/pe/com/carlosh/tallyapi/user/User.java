@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
@@ -60,6 +61,10 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private boolean active;
 
+    @Column(nullable = false)
+    @Setter @Getter
+    private boolean onboardingCompleted;
+
 
     public User(String email, String phone, String username, String password, String firstName, String lastName) {
         this.email = email;
@@ -70,30 +75,7 @@ public class User implements UserDetails {
         this.lastName = lastName;
         this.role = Role.USER;
         this.active = true;
-    }
-
-    public void deactivate() {
-        this.active = false;
-    }
-
-    public void activate() {
-        this.active = true;
-    }
-
-    //just basic information
-    public void updateProfile(String firstName, String lastName, String phone) {
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.phone = phone;
-    }
-
-    public void changeEmail(String email){
-        this.email=email;
-    }
-
-    //si se cumple que se sabe la contraseña actual
-    public void changePassword(String new_encoded_pass){
-        this.password=new_encoded_pass;
+        this.onboardingCompleted=false;
     }
 
     //usamos el email como identificador
@@ -130,5 +112,9 @@ public class User implements UserDetails {
     @Override
     public boolean isEnabled() {
         return this.active;
+    }
+
+    public String getNickname(){
+        return this.username;
     }
 }

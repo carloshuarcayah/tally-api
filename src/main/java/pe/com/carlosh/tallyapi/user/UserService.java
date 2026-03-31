@@ -33,7 +33,7 @@ public class UserService {
         User user = UserMapper.toEntity(req,passwordEncoder.encode(req.password()));
 
         String jwtToken = jwtService.generateToken(userRepository.save(user));
-        return new LoginResponseDTO(jwtToken);
+        return new LoginResponseDTO(jwtToken,user.getUsername(),user.isOnboardingCompleted());
     }
 
     public UserResponseDTO findById(Long id) {
@@ -51,7 +51,15 @@ public class UserService {
                 .orElseThrow(() -> new ResourceNotFoundException("User does not exists"));
 
         String jwtToken = jwtService.generateToken(user);
-        return new LoginResponseDTO(jwtToken);
+        return new LoginResponseDTO(jwtToken,user.getUsername(),user.isOnboardingCompleted());
+    }
+
+    @Transactional
+    public void completeOnboarding(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        user.setOnboardingCompleted(true);
+        userRepository.save(user);
     }
 
 }

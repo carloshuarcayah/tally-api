@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import pe.com.carlosh.tallyapi.user.dto.UserResponseDTO;
+import pe.com.carlosh.tallyapi.user.dto.UserStatsDTO;
 
 
 @RestController
@@ -31,4 +32,8 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @GetMapping("/me/stats")
+    public ResponseEntity<UserStatsDTO> getMyStats(@AuthenticationPrincipal User user) {
+        return ResponseEntity.ok(userService.getStats(user.getId()));
+    }
 }

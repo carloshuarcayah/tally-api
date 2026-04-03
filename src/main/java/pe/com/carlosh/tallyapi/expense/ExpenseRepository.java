@@ -13,7 +13,6 @@ import java.math.BigDecimal;
 public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     Page<Expense> findByUserId(Long userId, Pageable pageable);
     Page<Expense> findByUserIdAndActiveTrue(Long userId, Pageable pageable);
-    Page<Expense> findByUserIdAndCategoryId(Long userId, Long categoryId, Pageable pageable);
     Page<Expense> findByUserIdAndActiveTrueAndCategoryId(Long userId, Long categoryId, Pageable pageable);
 
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user.id = :userId AND e.active = true")
@@ -26,4 +25,10 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     BigDecimal sumTotalByBudgetId(@Param("budgetId") Long budgetId);
 
     Page<Expense> findByUserIdAndActiveTrueAndBudgetId(Long userId, Long budgetId, Pageable pageable);
+
+    @Query("SELECT COUNT(e) FROM Expense e WHERE e.user.id = :userId AND e.active = true")
+    long countByUserId(@Param("userId") Long userId);
+
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user.id = :userId AND e.active = true AND MONTH(e.expenseDate) = MONTH(CURRENT_DATE) AND YEAR(e.expenseDate) = YEAR(CURRENT_DATE)")
+    BigDecimal sumTotalByUserIdThisMonth(@Param("userId") Long userId);
 }

@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import pe.com.carlosh.tallyapi.exception.ResourceNotFoundException;
+import pe.com.carlosh.tallyapi.core.exception.ResourceNotFoundException;
 import pe.com.carlosh.tallyapi.user.UserRepository;
 
 @Configuration

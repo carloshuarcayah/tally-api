@@ -1,4 +1,4 @@
-package pe.com.carlosh.tallyapi.exception;
+package pe.com.carlosh.tallyapi.core.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;

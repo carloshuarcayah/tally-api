@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import pe.com.carlosh.tallyapi.category.dto.CategoryRequestDTO;
 import pe.com.carlosh.tallyapi.category.dto.CategoryResponseDTO;
-import pe.com.carlosh.tallyapi.exception.AlreadyExistsException;
-import pe.com.carlosh.tallyapi.exception.ResourceNotFoundException;
+import pe.com.carlosh.tallyapi.core.exception.AlreadyExistsException;
+import pe.com.carlosh.tallyapi.core.exception.ResourceNotFoundException;
 import pe.com.carlosh.tallyapi.user.User;
 import pe.com.carlosh.tallyapi.user.UserRepository;
 

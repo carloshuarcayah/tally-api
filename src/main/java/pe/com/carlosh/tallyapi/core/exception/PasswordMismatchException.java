@@ -1,4 +1,4 @@
-package pe.com.carlosh.tallyapi.exception;
+package pe.com.carlosh.tallyapi.core.exception;
 
 public class PasswordMismatchException extends RuntimeException {
     public PasswordMismatchException(String message) {

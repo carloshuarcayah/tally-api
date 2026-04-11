@@ -12,3 +12,9 @@ spring:
 jwt:
   secret: "Clavedepruebaparalaspruebas12312quehareengithubactions"
   expiration: 3600000
+
+resend:
+  api:
+    key: "aversiyanomedaunError12312"
+  from:
+    email: "onboarding@tallygastos.lat"

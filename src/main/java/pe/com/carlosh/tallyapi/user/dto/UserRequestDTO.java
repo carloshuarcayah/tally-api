@@ -3,7 +3,6 @@ package pe.com.carlosh.tallyapi.user.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import pe.com.carlosh.tallyapi.exception.PasswordMismatchException;
 
 public record UserRequestDTO(
         @NotBlank

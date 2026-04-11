@@ -35,7 +35,7 @@ public class User implements UserDetails {
     @Column(nullable = false,unique = false)
     private String username;
 
-    @Column(nullable = false)
+    @Column(length = 255)
     private String password;
 
     @Column(nullable = false,length = 50)
@@ -65,6 +65,10 @@ public class User implements UserDetails {
     @Setter @Getter
     private boolean onboardingCompleted;
 
+    @Column(nullable = false)
+    @Setter @Getter
+    private boolean emailVerified;
+
 
     public User(String email, String phone, String username, String password, String firstName, String lastName) {
         this.email = email;
@@ -76,6 +80,7 @@ public class User implements UserDetails {
         this.role = Role.USER;
         this.active = true;
         this.onboardingCompleted=false;
+        this.emailVerified = false;
     }
 
     //usamos el email como identificador

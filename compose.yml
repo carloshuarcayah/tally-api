@@ -2,20 +2,39 @@ services:
   mysql:
     image: 'mysql:8.4.7'
     container_name: tally-mysql
+    restart: unless-stopped
     environment:
-      MYSQL_DATABASE: tally_db
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-tally_db}
       MYSQL_ROOT_PASSWORD: ${ROOT_PASS}
-      MYSQL_USER: tally_user
+      MYSQL_USER: ${MYSQL_USER:-tally_user}
       MYSQL_PASSWORD: ${MYSQL_PASS}
     ports:
       - '3306:3306'
     volumes:
       - tally_data:/var/lib/mysql
     healthcheck:
-      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost" ]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
       interval: 10s
       timeout: 5s
       retries: 5
+
+  api:
+    build: .
+    container_name: tally-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-tally_db}
+      DATASOURCE_USERNAME: ${MYSQL_USER:-tally_user}
+      DATASOURCE_PASSWORD: ${MYSQL_PASS:?MYSQL_PASS is required in .env}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET is required in .env}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+      RESEND_API_KEY: ${RESEND_API_KEY}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-onboarding@resend.test}
+    ports:
+      - '8080:8080'
 
 volumes:
   tally_data:

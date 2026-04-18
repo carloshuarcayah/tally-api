@@ -2,6 +2,7 @@ package pe.com.carlosh.tallyapi.budget;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -60,221 +61,292 @@ class BudgetServiceTest {
         ReflectionTestUtils.setField(budget, "id", BUDGET_ID);
     }
 
+    @Nested
+    @DisplayName("findAll")
+    class FindAll {
 
-    @Test
-    @DisplayName("FindAll - Ok: returns page of budgets with spent amounts")
-    void findAll_Success() {
-        Pageable pageable = PageRequest.of(0, 10);
-        Page<Budget> page = new PageImpl<>(List.of(budget));
+        @Test
+        @DisplayName("Ok: returns page of budgets with spent amounts")
+        void success() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Budget> page = new PageImpl<>(List.of(budget));
 
-        when(budgetRepository.findByUserIdAndActiveTrue(USER_ID, pageable)).thenReturn(page);
-        when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("250.00"));
+            when(budgetRepository.findByUserIdAndActiveTrue(USER_ID, pageable)).thenReturn(page);
+            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("250.00"));
 
-        Page<BudgetResponseDTO> result = budgetService.findAll(USER_ID, pageable);
+            Page<BudgetResponseDTO> result = budgetService.findAll(USER_ID, pageable);
 
-        //BUDGET MAX AMOUNT IS 1000
-        assertEquals(1, result.getTotalElements());
-        assertEquals(new BigDecimal("250.00"), result.getContent().getFirst().spentAmount());
-        assertEquals(new BigDecimal("750.00"), result.getContent().getFirst().remainingAmount());
+            assertEquals(1, result.getTotalElements());
+            assertEquals(new BigDecimal("250.00"), result.getContent().getFirst().spentAmount());
+            assertEquals(new BigDecimal("750.00"), result.getContent().getFirst().remainingAmount());
+        }
+
+        @Test
+        @DisplayName("Ok: returns empty page when user has no budgets")
+        void noBudgets() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Budget> page = new PageImpl<>(List.of());
+
+            when(budgetRepository.findByUserIdAndActiveTrue(USER_ID, pageable)).thenReturn(page);
+
+            Page<BudgetResponseDTO> result = budgetService.findAll(USER_ID, pageable);
+
+            assertEquals(0, result.getTotalElements());
+            assertTrue(result.getContent().isEmpty());
+            verify(expenseRepository, never()).sumTotalByBudgetId(any());
+        }
+
+        @Test
+        @DisplayName("Ok: overspent budget shows negative remaining amount")
+        void overspent() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Page<Budget> page = new PageImpl<>(List.of(budget));
+
+            when(budgetRepository.findByUserIdAndActiveTrue(USER_ID, pageable)).thenReturn(page);
+            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("1200.00"));
+
+            Page<BudgetResponseDTO> result = budgetService.findAll(USER_ID, pageable);
+
+            BudgetResponseDTO dto = result.getContent().getFirst();
+            assertEquals(new BigDecimal("1200.00"), dto.spentAmount());
+            assertEquals(new BigDecimal("-200.00"), dto.remainingAmount());
+        }
+
+        @Test
+        @DisplayName("Ok: each budget gets its own spent amount")
+        void multipleBudgets() {
+            Pageable pageable = PageRequest.of(0, 10);
+            Budget budget2 = new Budget("Otro", "Desc", new BigDecimal("500.00"), user, category);
+            ReflectionTestUtils.setField(budget2, "id", 101L);
+
+            Page<Budget> page = new PageImpl<>(List.of(budget, budget2));
+
+            when(budgetRepository.findByUserIdAndActiveTrue(USER_ID, pageable)).thenReturn(page);
+            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("250.00"));
+            when(expenseRepository.sumTotalByBudgetId(101L)).thenReturn(new BigDecimal("400.00"));
+
+            Page<BudgetResponseDTO> result = budgetService.findAll(USER_ID, pageable);
+
+            assertEquals(2, result.getTotalElements());
+            assertEquals(new BigDecimal("250.00"), result.getContent().get(0).spentAmount());
+            assertEquals(new BigDecimal("400.00"), result.getContent().get(1).spentAmount());
+            assertEquals(new BigDecimal("750.00"), result.getContent().get(0).remainingAmount());
+            assertEquals(new BigDecimal("100.00"), result.getContent().get(1).remainingAmount());
+        }
     }
 
-    // ── findById ─────────────────────────────────────────────────────────
+    @Nested
+    @DisplayName("findById")
+    class FindById {
 
-    @Test
-    @DisplayName("FindById - Ok: returns budget with spent amount")
-    void findById_Success() {
-        when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
-        when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("300.00"));
+        @Test
+        @DisplayName("Ok: returns budget with spent amount")
+        void success() {
+            when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
+            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("300.00"));
 
-        BudgetResponseDTO response = budgetService.findById(BUDGET_ID, USER_ID);
+            BudgetResponseDTO response = budgetService.findById(BUDGET_ID, USER_ID);
 
-        assertNotNull(response);
-        assertEquals("Presupuesto Mensual", response.name());
-        assertEquals(new BigDecimal("300.00"), response.spentAmount());
-        assertEquals(new BigDecimal("700.00"), response.remainingAmount());
+            assertNotNull(response);
+            assertEquals("Presupuesto Mensual", response.name());
+            assertEquals(new BigDecimal("300.00"), response.spentAmount());
+            assertEquals(new BigDecimal("700.00"), response.remainingAmount());
+        }
+
+        @Test
+        @DisplayName("Error: throws ResourceNotFoundException when not found")
+        void throwsResourceNotFound() {
+            when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.empty());
+
+            assertThrows(ResourceNotFoundException.class, () -> budgetService.findById(BUDGET_ID, USER_ID));
+        }
     }
 
-    @Test
-    @DisplayName("FindById - Error: throws ResourceNotFoundException when not found")
-    void findById_ThrowsResourceNotFoundException() {
-        when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.empty());
+    @Nested
+    @DisplayName("create")
+    class Create {
 
-        assertThrows(ResourceNotFoundException.class, () -> budgetService.findById(BUDGET_ID, USER_ID));
+        @Test
+        @DisplayName("Ok: with category")
+        void withCategory() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Nuevo Budget", "Desc", new BigDecimal("500.00"), CATEGORY_ID);
+
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Nuevo Budget")).thenReturn(false);
+            when(categoryRepository.findByIdAndUserIdAndActiveTrue(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
+            when(budgetRepository.save(any(Budget.class))).thenAnswer(inv -> {
+                Budget b = inv.getArgument(0);
+                ReflectionTestUtils.setField(b, "id", 200L);
+                return b;
+            });
+
+            BudgetResponseDTO response = budgetService.create(req, USER_ID);
+
+            assertNotNull(response);
+            assertEquals("Nuevo Budget", response.name());
+            assertEquals(BigDecimal.ZERO, response.spentAmount());
+            assertEquals("Comida", response.categoryName());
+            verify(budgetRepository, times(1)).save(any(Budget.class));
+        }
+
+        @Test
+        @DisplayName("Ok: without category")
+        void withoutCategory() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Budget Sin Cat", "Desc", new BigDecimal("200.00"), null);
+
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Budget Sin Cat")).thenReturn(false);
+            when(budgetRepository.save(any(Budget.class))).thenAnswer(inv -> {
+                Budget b = inv.getArgument(0);
+                ReflectionTestUtils.setField(b, "id", 201L);
+                return b;
+            });
+
+            BudgetResponseDTO response = budgetService.create(req, USER_ID);
+
+            assertNotNull(response);
+            assertNull(response.categoryId());
+            assertNull(response.categoryName());
+            verify(categoryRepository, never()).findByIdAndUserIdAndActiveTrue(any(), any());
+        }
+
+        @Test
+        @DisplayName("Error: throws AlreadyExistsException when name duplicated")
+        void throwsAlreadyExists() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Presupuesto Mensual", "Desc", new BigDecimal("500.00"), null);
+
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Presupuesto Mensual")).thenReturn(true);
+
+            AlreadyExistsException ex = assertThrows(AlreadyExistsException.class,
+                    () -> budgetService.create(req, USER_ID));
+
+            assertTrue(ex.getMessage().contains("Presupuesto Mensual"));
+            verify(budgetRepository, never()).save(any(Budget.class));
+        }
+
+        @Test
+        @DisplayName("Error: throws ResourceNotFoundException when category not found")
+        void throwsResourceNotFoundCategory() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Budget", "Desc", new BigDecimal("500.00"), 999L);
+
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Budget")).thenReturn(false);
+            when(categoryRepository.findByIdAndUserIdAndActiveTrue(999L, USER_ID)).thenReturn(Optional.empty());
+
+            ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
+                    () -> budgetService.create(req, USER_ID));
+
+            assertEquals("Category not found", ex.getMessage());
+            verify(budgetRepository, never()).save(any(Budget.class));
+        }
     }
 
-    // ── create ───────────────────────────────────────────────────────────
+    @Nested
+    @DisplayName("update")
+    class Update {
 
-    @Test
-    @DisplayName("Create - Ok: with category")
-    void create_WithCategory_Success() {
-        BudgetRequestDTO req = new BudgetRequestDTO("Nuevo Budget", "Desc", new BigDecimal("500.00"), CATEGORY_ID);
+        @Test
+        @DisplayName("Ok: updates name and category")
+        void success() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Nombre Actualizado", "Nueva desc", new BigDecimal("800.00"), CATEGORY_ID);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Nuevo Budget")).thenReturn(false);
-        when(categoryRepository.findByIdAndUserIdAndActiveTrue(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
-        when(budgetRepository.save(any(Budget.class))).thenAnswer(inv -> {
-            Budget b = inv.getArgument(0);
-            ReflectionTestUtils.setField(b, "id", 200L);
-            return b;
-        });
+            when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
+            when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Nombre Actualizado")).thenReturn(false);
+            when(categoryRepository.findByIdAndUserIdAndActiveTrue(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
+            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("100.00"));
 
-        BudgetResponseDTO response = budgetService.create(req, USER_ID);
+            BudgetResponseDTO response = budgetService.update(BUDGET_ID, USER_ID, req);
 
-        assertNotNull(response);
-        assertEquals("Nuevo Budget", response.name());
-        assertEquals(BigDecimal.ZERO, response.spentAmount());
-        assertEquals("Comida", response.categoryName());
-        verify(budgetRepository, times(1)).save(any(Budget.class));
+            assertEquals("Nombre Actualizado", response.name());
+            assertEquals(new BigDecimal("800.00"), response.maxAmount());
+            assertEquals(new BigDecimal("100.00"), response.spentAmount());
+        }
+
+        @Test
+        @DisplayName("Ok: same name does not trigger duplicate check")
+        void sameNameSkipsDuplicateCheck() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Presupuesto Mensual", "Otra desc", new BigDecimal("1500.00"), null);
+
+            when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
+            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(BigDecimal.ZERO);
+
+            BudgetResponseDTO response = budgetService.update(BUDGET_ID, USER_ID, req);
+
+            assertEquals("Presupuesto Mensual", response.name());
+            verify(budgetRepository, never()).existsByUserIdAndNameIgnoreCaseAndActiveTrue(any(), any());
+        }
+
+        @Test
+        @DisplayName("Error: throws AlreadyExistsException when new name already taken")
+        void throwsAlreadyExists() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Nombre Ocupado", "Desc", new BigDecimal("500.00"), null);
+
+            when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
+            when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Nombre Ocupado")).thenReturn(true);
+
+            assertThrows(AlreadyExistsException.class,
+                    () -> budgetService.update(BUDGET_ID, USER_ID, req));
+        }
+
+        @Test
+        @DisplayName("Error: throws ResourceNotFoundException when budget not found")
+        void throwsResourceNotFound() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Name", "Desc", new BigDecimal("500.00"), null);
+
+            when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.empty());
+
+            assertThrows(ResourceNotFoundException.class,
+                    () -> budgetService.update(BUDGET_ID, USER_ID, req));
+        }
     }
 
-    @Test
-    @DisplayName("Create - Ok: without category")
-    void create_WithoutCategory_Success() {
-        BudgetRequestDTO req = new BudgetRequestDTO("Budget Sin Cat", "Desc", new BigDecimal("200.00"), null);
+    @Nested
+    @DisplayName("delete")
+    class Delete {
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Budget Sin Cat")).thenReturn(false);
-        when(budgetRepository.save(any(Budget.class))).thenAnswer(inv -> {
-            Budget b = inv.getArgument(0);
-            ReflectionTestUtils.setField(b, "id", 201L);
-            return b;
-        });
+        @Test
+        @DisplayName("Ok: deactivates budget")
+        void success() {
+            when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
 
-        BudgetResponseDTO response = budgetService.create(req, USER_ID);
+            budgetService.delete(BUDGET_ID, USER_ID);
 
-        assertNotNull(response);
-        assertNull(response.categoryId());
-        assertNull(response.categoryName());
-        verify(categoryRepository, never()).findByIdAndUserIdAndActiveTrue(any(), any());
+            assertFalse(budget.isActive());
+        }
+
+        @Test
+        @DisplayName("Error: throws ResourceNotFoundException when budget not found")
+        void throwsResourceNotFound() {
+            when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.empty());
+
+            assertThrows(ResourceNotFoundException.class,
+                    () -> budgetService.delete(BUDGET_ID, USER_ID));
+        }
     }
 
-    @Test
-    @DisplayName("Create - Error: throws AlreadyExistsException when name duplicated")
-    void create_ThrowsAlreadyExistsException() {
-        BudgetRequestDTO req = new BudgetRequestDTO("Presupuesto Mensual", "Desc", new BigDecimal("500.00"), null);
+    @Nested
+    @DisplayName("enable")
+    class Enable {
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Presupuesto Mensual")).thenReturn(true);
+        @Test
+        @DisplayName("Ok: activates budget")
+        void success() {
+            budget.deactivate();
+            when(budgetRepository.findByIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
 
-        AlreadyExistsException ex = assertThrows(AlreadyExistsException.class,
-                () -> budgetService.create(req, USER_ID));
+            budgetService.enable(BUDGET_ID, USER_ID);
 
-        assertTrue(ex.getMessage().contains("Presupuesto Mensual"));
-        verify(budgetRepository, never()).save(any(Budget.class));
-    }
+            assertTrue(budget.isActive());
+        }
 
-    @Test
-    @DisplayName("Create - Error: throws ResourceNotFoundException when category not found")
-    void create_ThrowsResourceNotFoundException_CategoryNotFound() {
-        BudgetRequestDTO req = new BudgetRequestDTO("Budget", "Desc", new BigDecimal("500.00"), 999L);
+        @Test
+        @DisplayName("Error: throws ResourceNotFoundException when budget not found")
+        void throwsResourceNotFound() {
+            when(budgetRepository.findByIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(Optional.empty());
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Budget")).thenReturn(false);
-        when(categoryRepository.findByIdAndUserIdAndActiveTrue(999L, USER_ID)).thenReturn(Optional.empty());
-
-        ResourceNotFoundException ex = assertThrows(ResourceNotFoundException.class,
-                () -> budgetService.create(req, USER_ID));
-
-        assertEquals("Category not found", ex.getMessage());
-        verify(budgetRepository, never()).save(any(Budget.class));
-    }
-
-    // ── update ───────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("Update - Ok: updates name and category")
-    void update_Success() {
-        BudgetRequestDTO req = new BudgetRequestDTO("Nombre Actualizado", "Nueva desc", new BigDecimal("800.00"), CATEGORY_ID);
-
-        when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
-        when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Nombre Actualizado")).thenReturn(false);
-        when(categoryRepository.findByIdAndUserIdAndActiveTrue(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
-        when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("100.00"));
-
-        BudgetResponseDTO response = budgetService.update(BUDGET_ID, USER_ID, req);
-
-        assertEquals("Nombre Actualizado", response.name());
-        assertEquals(new BigDecimal("800.00"), response.maxAmount());
-        assertEquals(new BigDecimal("100.00"), response.spentAmount());
-    }
-
-    @Test
-    @DisplayName("Update - Ok: same name does not trigger duplicate check")
-    void update_SameName_SkipsDuplicateCheck() {
-        BudgetRequestDTO req = new BudgetRequestDTO("Presupuesto Mensual", "Otra desc", new BigDecimal("1500.00"), null);
-
-        when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
-        when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(BigDecimal.ZERO);
-
-        BudgetResponseDTO response = budgetService.update(BUDGET_ID, USER_ID, req);
-
-        assertEquals("Presupuesto Mensual", response.name());
-        verify(budgetRepository, never()).existsByUserIdAndNameIgnoreCaseAndActiveTrue(any(), any());
-    }
-
-    @Test
-    @DisplayName("Update - Error: throws AlreadyExistsException when new name already taken")
-    void update_ThrowsAlreadyExistsException() {
-        BudgetRequestDTO req = new BudgetRequestDTO("Nombre Ocupado", "Desc", new BigDecimal("500.00"), null);
-
-        when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
-        when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Nombre Ocupado")).thenReturn(true);
-
-        assertThrows(AlreadyExistsException.class,
-                () -> budgetService.update(BUDGET_ID, USER_ID, req));
-    }
-
-    @Test
-    @DisplayName("Update - Error: throws ResourceNotFoundException when budget not found")
-    void update_ThrowsResourceNotFoundException() {
-        BudgetRequestDTO req = new BudgetRequestDTO("Name", "Desc", new BigDecimal("500.00"), null);
-
-        when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> budgetService.update(BUDGET_ID, USER_ID, req));
-    }
-
-    // ── delete ───────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("Delete - Ok: deactivates budget")
-    void delete_Success() {
-        when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
-
-        budgetService.delete(BUDGET_ID, USER_ID);
-
-        assertFalse(budget.isActive());
-    }
-
-    @Test
-    @DisplayName("Delete - Error: throws ResourceNotFoundException when budget not found")
-    void delete_ThrowsResourceNotFoundException() {
-        when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> budgetService.delete(BUDGET_ID, USER_ID));
-    }
-
-    // ── enable ───────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("Enable - Ok: activates budget")
-    void enable_Success() {
-        budget.deactivate();
-        when(budgetRepository.findByIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
-
-        budgetService.enable(BUDGET_ID, USER_ID);
-
-        assertTrue(budget.isActive());
-    }
-
-    @Test
-    @DisplayName("Enable - Error: throws ResourceNotFoundException when budget not found")
-    void enable_ThrowsResourceNotFoundException() {
-        when(budgetRepository.findByIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(Optional.empty());
-
-        assertThrows(ResourceNotFoundException.class,
-                () -> budgetService.enable(BUDGET_ID, USER_ID));
+            assertThrows(ResourceNotFoundException.class,
+                    () -> budgetService.enable(BUDGET_ID, USER_ID));
+        }
     }
 }

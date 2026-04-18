@@ -11,6 +11,7 @@ import pe.com.carlosh.tallyapi.user.User;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "categories")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Category {
     @Id

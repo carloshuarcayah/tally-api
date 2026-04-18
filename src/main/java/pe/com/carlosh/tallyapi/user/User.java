@@ -32,7 +32,7 @@ public class User implements UserDetails {
     @Getter
     private String phone;
 
-    @Column(nullable = false,unique = false)
+    @Column(nullable = false, unique = true)
     private String username;
 
     @Column(length = 255)

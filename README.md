@@ -52,6 +52,7 @@ Su versión 1.0 ya está lista.
 - **Framework:** Spring Boot 4.0.4
 - **Seguridad:** Spring Security + JWT (jjwt 0.13.0) + BCrypt
 - **Persistencia:** Spring Data JPA + Hibernate
+- **Migraciones:** Flyway (las corre automáticamente al arrancar la app)
 - **Base de datos:** MySQL 8.4 (AWS RDS)
 - **Email:** Resend
 - **Documentación:** Swagger
@@ -89,7 +90,7 @@ src/main/java/pe/com/carlosh/tallyapi/
 ### Requisitos previos
 
 - [Docker](https://www.docker.com)
-- Cuenta en [Resend](https://resend.com) para obtener una API key (**opcional**, solo si quieres probar el envío real de emails; sin ella no podrás registrarte de forma normal)
+- Cuenta en [Resend](https://resend.com) para obtener una API key (**opcional**, solo si quieres recibir el correo real de verificación; si no la configuras, el enlace de verificación se imprime en los logs del contenedor)
 
 > No necesitas instalar Java ni Maven. Todo corre dentro de Docker.
 
@@ -162,7 +163,7 @@ Debería devolver `{"status":"UP"}`. Si ves `DOWN` o no responde, revisa los log
 | `RESEND_API_KEY`      | API key de Resend                             | `re_xxxxxxxxx`                        |
 | `RESEND_FROM_EMAIL`   | Remitente verificado                          | `onboarding@resend.test`              |
 | `FRONTEND_VERIFICATION_URL` | URL del frontend para verificar cuenta por email | `http://localhost:5173/verify` |
-| `HIBERNATE_DDL`       | Estrategia DDL de Hibernate                   | `update`                              |
+| `HIBERNATE_DDL`       | Estrategia DDL de Hibernate (con Flyway en uso)| `validate`                            |
 | `SHOW_SQL`            | Loggear SQL en consola                        | `true`                                |
 | `FORMAT_SQL`          | Formatear el SQL loggeado                     | `true`                                |
 
@@ -205,7 +206,7 @@ Al registrarte recibirás un correo con un enlace de verificación. El enlace ap
 
 Tienes dos formas de completar este paso:
 
-**Opción A: Desde el correo (necesitas el frontend corriendo - no disponible)**
+**Opción A: Desde el correo (necesitas el frontend corriendo, no incluido en este repo)**
 
 Haz clic en el botón "Verificar Cuenta" del email o copia el enlace en tu navegador. El frontend se encarga de llamar al backend.
 
@@ -217,6 +218,11 @@ Copia el token que aparece al final del enlace del correo (después de `?token=`
 curl -X GET "http://localhost:8080/api/auth/verify?token=TU_TOKEN_AQUI"
 ```
 
+> Si **no** configuraste `RESEND_API_KEY`, el correo no se enviará pero el token sí se genera. Búscalo en los logs del contenedor:
+> ```bash
+> docker logs <nombre_contenedor_api> | grep "Verification link"
+> ```
+
 **Respuesta:**
 ```json
 {
@@ -227,6 +233,8 @@ curl -X GET "http://localhost:8080/api/auth/verify?token=TU_TOKEN_AQUI"
 > El token expira en 24 horas y solo puede usarse una vez.
 
 **3. Iniciar sesión**
+
+> `identifier` puede ser tu email o tu username.
 
 ```bash
 curl -X POST http://localhost:8080/api/auth/login \
@@ -271,9 +279,7 @@ El despliegue es **completamente automatizado** con GitHub Actions:
 
 ## Roadmap
 
-- [ ] Usar Flyway
 - [ ] Más tests
-- [ ] Usar Spring Boot Actuator
 - [ ] Refresh tokens
 - [ ] Recuperación de contraseña
 - [ ] Exportar gastos a CSV/PDF

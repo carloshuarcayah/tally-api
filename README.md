@@ -1,4 +1,4 @@
-# Tally API
+# Apunta API
 
 API REST para la gestión de finanzas personales: registro de gastos, organización por categorías y control de presupuestos con alertas de sobregiro. Construida con Spring Boot 4, autenticación JWT y verificación de email asíncrona.
 
@@ -13,18 +13,18 @@ API REST para la gestión de finanzas personales: registro de gastos, organizaci
 - [Estructura del proyecto](#estructura-del-proyecto)
 - [Como probarlo](#como-probarlo)
 - [Variables de entorno](#variables-de-entorno)
-- [Endpoints principales](#endpoints-principales)
+- [Endpoints](#endpoints)
 - [Despliegue](#despliegue)
-- [Decisiones técnicas](#decisiones-técnicas)
 - [Roadmap](#roadmap)
+- [Autor](#autor)
 
 ---
 
 ## Sobre el proyecto
 
-**Tally** es proyecto personal para resolver un problema concreto: control real de los gastos.
+**Apunta** es un proyecto personal para resolver un problema concreto: control real de los gastos.
 
-Su version 1.0 ya está lista.
+Su versión 1.0 ya está lista.
 
 **Objetivos:**
 1. Reforzar mis conocimientos sobre programación en Java.
@@ -75,7 +75,7 @@ src/main/java/pe/com/carlosh/tallyapi/
 ├── auth/                  # Registro, login, verificación de email
 ├── user/                  # Perfil, onboarding, estadísticas
 ├── category/              # CRUD de categorías personalizadas
-├── budget/                # Presupuestos (con categoria y sin categoria)
+├── budget/                # Presupuestos (con categoría y sin categoría)
 ├── expense/               # CRUD de gastos + agregaciones
 ├── notification/          # Servicio de envío de emails (Resend)
 ├── security/              # SecurityConfig, JwtService, filtros
@@ -89,7 +89,7 @@ src/main/java/pe/com/carlosh/tallyapi/
 ### Requisitos previos
 
 - [Docker](https://www.docker.com)
-- Cuenta en [Resend](https://resend.com) para obtener una API key (**opcional**, solo si quieres probar el envío real de emails, sin el no podrás registrarte de manera normal)
+- Cuenta en [Resend](https://resend.com) para obtener una API key (**opcional**, solo si quieres probar el envío real de emails; sin ella no podrás registrarte de forma normal)
 
 > No necesitas instalar Java ni Maven. Todo corre dentro de Docker.
 
@@ -112,13 +112,13 @@ Luego edita el archivo `.env` con tus valores. Los campos marcados como obligato
 
 ```bash
 # Obligatorios
-ROOT_PASS=tu_password_root
-DATASOURCE_PASSWORD=tu_password_como_user
+DATASOURCE_PASSWORD=tu_password_de_base_de_datos
 JWT_SECRET=una_cadena_aleatoria_de_al_menos_32_caracteres
 
 # Si quieres probar el envío de emails
 RESEND_API_KEY=re_tu_api_key
-RESEND_FROM_EMAIL=onboarding@resend.tests
+RESEND_FROM_EMAIL=onboarding@resend.test
+FRONTEND_VERIFICATION_URL=http://localhost:5173/verify
 
 # Opcionales (tienen valores por defecto)
 DATASOURCE_URL=jdbc:mysql://localhost:3306/tally_db
@@ -143,20 +143,20 @@ La documentación interactiva en `http://localhost:8080/swagger-ui.html`.
 
 ## Variables de entorno
 
-| Variable              | Descripción                   | Default                               |
-|-----------------------|-------------------------------|---------------------------------------|
-| `DATASOURCE_URL`      | JDBC URL de MySQL                 | `jdbc:mysql://localhost:3306/tally_db`|
-| `ROOT_PASS`           | Password root de MySQL            | — (requerido)                         |
-| `MYSQL_DATABASE`      | Nombre de la BD                   | `tally_db`                            |
-| `DATASOURCE_USERNAME` | Usuario de la BD                  | `tally_user`                          |
-| `DATASOURCE_PASSWORD` | Contraseña de la BD               | — (requerido)                         |
-| `JWT_SECRET`          | Clave HMAC para firmar tokens     | — (requerido)                         |
-| `JWT_EXPIRATION`      | TTL del JWT en milisegundos       | `86400000` (24h)                      |
-| `RESEND_API_KEY`      | API key de Resend                 | `re_xxxxxxxxx`                        |
-| `RESEND_FROM_EMAIL`   | Remitente verificado              | `onboarding@resend.test`              |
-| `HIBERNATE_DDL`       | Estrategia DDL de Hibernate       | `update`                              |
-| `SHOW_SQL`            | Loggear SQL en consola            | `true`                                |
-| `FORMAT_SQL`          | Formatear el SQL loggeado         | `true`                                |
+| Variable              | Descripción                                   | Default                               |
+|-----------------------|-----------------------------------------------|---------------------------------------|
+| `DATASOURCE_URL`      | JDBC URL de MySQL                             | `jdbc:mysql://localhost:3306/tally_db`|
+| `MYSQL_DATABASE`      | Nombre de la BD                               | `tally_db`                            |
+| `DATASOURCE_USERNAME` | Usuario de la BD                              | `tally_user`                          |
+| `DATASOURCE_PASSWORD` | Contraseña de la BD                           | — (requerido)                         |
+| `JWT_SECRET`          | Clave HMAC para firmar tokens                 | — (requerido)                         |
+| `JWT_EXPIRATION`      | TTL del JWT en milisegundos                   | `86400000` (24h)                      |
+| `RESEND_API_KEY`      | API key de Resend                             | `re_xxxxxxxxx`                        |
+| `RESEND_FROM_EMAIL`   | Remitente verificado                          | `onboarding@resend.test`              |
+| `FRONTEND_VERIFICATION_URL` | URL del frontend para verificar cuenta por email | `http://localhost:5173/verify` |
+| `HIBERNATE_DDL`       | Estrategia DDL de Hibernate                   | `update`                              |
+| `SHOW_SQL`            | Loggear SQL en consola                        | `true`                                |
+| `FORMAT_SQL`          | Formatear el SQL loggeado                     | `true`                                |
 
 ---
 
@@ -255,7 +255,7 @@ El despliegue es **completamente automatizado** con GitHub Actions:
 3. La EC2 ejecuta `deploy.sh`: `git pull` → `docker build` → reemplaza el contenedor en caliente.
 
 **Infraestructura en producción:**
-- **API**: AWS EC2 (`t3.micro`) con Docker.
+- **API**: AWS EC2 (`t4g.small`) con Docker.
 - **Base de datos**: AWS RDS MySQL.
 - **Email**: Resend con dominio verificado.
 - **Secretos**: variables de entorno cargadas desde `.env` en el host.
@@ -275,5 +275,6 @@ El despliegue es **completamente automatizado** con GitHub Actions:
 
 ## Autor
 
-**YO**
-[GitHub](https://github.com/carloshuarcayah)
+**Carlos Huarcaya**
+
+- GitHub: [@carloshuarcayah](https://github.com/carloshuarcayah)     

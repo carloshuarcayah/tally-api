@@ -11,6 +11,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import pe.com.carlosh.tallyapi.category.dto.CategoryRequestDTO;
 import pe.com.carlosh.tallyapi.category.dto.CategoryResponseDTO;
+import pe.com.carlosh.tallyapi.category.dto.CategoryWithStatsResponseDTO;
 import pe.com.carlosh.tallyapi.core.dto.SetActiveRequestDTO;
 import pe.com.carlosh.tallyapi.user.User;
 
@@ -26,6 +27,14 @@ public class CategoryController {
             @AuthenticationPrincipal User user,
             Pageable pageable) {
         return ResponseEntity.ok(categoryService.findAll(user.getId(), name, pageable));
+    }
+
+    @GetMapping("/with-stats")
+    public ResponseEntity<Page<CategoryWithStatsResponseDTO>> findAllWithStats(
+            @RequestParam(required = false) String name,
+            @AuthenticationPrincipal User user,
+            Pageable pageable) {
+        return ResponseEntity.ok(categoryService.findAllWithStats(user.getId(), name, pageable));
     }
 
     @GetMapping("/{id}")

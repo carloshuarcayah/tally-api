@@ -48,7 +48,7 @@ public class EmailService {
         );
 
         CreateEmailOptions params = CreateEmailOptions.builder()
-                .from("APUNTA <" + fromEmail + ">")
+                .from("Apunta <" + fromEmail + ">")
                 .to(toEmail)
                 .subject("Verifica tu cuenta en Apunta")
                 .html(htmlBody)

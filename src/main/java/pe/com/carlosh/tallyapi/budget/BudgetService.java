@@ -10,6 +10,7 @@ import pe.com.carlosh.tallyapi.budget.dto.BudgetResponseDTO;
 import pe.com.carlosh.tallyapi.category.Category;
 import pe.com.carlosh.tallyapi.category.CategoryRepository;
 import pe.com.carlosh.tallyapi.core.exception.AlreadyExistsException;
+import pe.com.carlosh.tallyapi.core.exception.InvalidOperationException;
 import pe.com.carlosh.tallyapi.core.exception.ResourceNotFoundException;
 import pe.com.carlosh.tallyapi.expense.ExpenseRepository;
 import pe.com.carlosh.tallyapi.user.User;
@@ -44,6 +45,14 @@ public class BudgetService {
     public BudgetResponseDTO create(BudgetRequestDTO req, Long userId) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        int max = user.getTier().getMaxBudgets();
+        long current = budgetRepository.countByUserIdAndActiveTrue(userId);
+        if (current >= max) {
+            throw new InvalidOperationException(
+                    "Has alcanzado el límite de " + max + " presupuestos para tu plan " + user.getTier().getName().name().toLowerCase()
+            );
+        }
 
         if (budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(userId, req.name())) {
             throw new AlreadyExistsException("Budget already exists with name: " + req.name());

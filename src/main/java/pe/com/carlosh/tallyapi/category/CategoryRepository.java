@@ -14,6 +14,7 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findByIdAndUserIdAndActiveTrue(Long id,Long userId);
     Optional<Category> findByIdAndUserId(Long id,Long userId);
     long countByUserIdAndActiveTrue(Long userId);
+    long countByUserIdAndActiveTrueAndPredefinedFalse(Long userId);
 
     Page<Category> findByUserIdAndNameContainingIgnoreCaseAndActiveTrue(Long userId, String name, Pageable pageable);
     Page<Category> findByUserIdAndActiveTrue(Long userId, Pageable pageable);

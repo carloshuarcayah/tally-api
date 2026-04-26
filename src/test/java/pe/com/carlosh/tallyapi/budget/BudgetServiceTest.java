@@ -53,6 +53,7 @@ class BudgetServiceTest {
     void setUp() {
         user = new User("test@mail.com", "123456789", "tester", "pass", "Carlos", "Test");
         ReflectionTestUtils.setField(user, "id", USER_ID);
+        user.setTier(new pe.com.carlosh.tallyapi.tier.Tier(pe.com.carlosh.tallyapi.tier.TierName.FREE, 5, 4));
 
         category = new Category("Comida", "Gastos de comida", user);
         ReflectionTestUtils.setField(category, "id", CATEGORY_ID);
@@ -238,6 +239,20 @@ class BudgetServiceTest {
                     () -> budgetService.create(req, USER_ID));
 
             assertEquals("Category not found", ex.getMessage());
+            verify(budgetRepository, never()).save(any(Budget.class));
+        }
+
+        @Test
+        @DisplayName("Error: throws InvalidOperationException when tier limit reached")
+        void throwsInvalidOperationException_WhenTierLimitReached() {
+            BudgetRequestDTO req = new BudgetRequestDTO("Quinto", "Desc", new BigDecimal("500.00"), null);
+
+            when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+            when(budgetRepository.countByUserIdAndActiveTrue(USER_ID)).thenReturn(4L);
+
+            assertThrows(pe.com.carlosh.tallyapi.core.exception.InvalidOperationException.class,
+                    () -> budgetService.create(req, USER_ID));
+
             verify(budgetRepository, never()).save(any(Budget.class));
         }
     }

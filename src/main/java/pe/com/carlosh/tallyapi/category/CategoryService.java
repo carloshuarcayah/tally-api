@@ -73,6 +73,14 @@ public class CategoryService {
 
         User user = userRepository.findById(userId).orElseThrow(()->new ResourceNotFoundException("User not found with id: "+userId));
 
+        int max = user.getTier().getMaxCategories();
+        long current = categoryRepository.countByUserIdAndActiveTrueAndPredefinedFalse(userId);
+        if (current >= max) {
+            throw new InvalidOperationException(
+                    "Has alcanzado el límite de " + max + " categorías para tu plan " + user.getTier().getName().name().toLowerCase()
+            );
+        }
+
         if(categoryRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(userId,req.name())){
             throw new AlreadyExistsException("Category already exists with name: "+req.name());
         }

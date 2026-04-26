@@ -21,6 +21,10 @@ import pe.com.carlosh.tallyapi.expense.ExpenseRepository;
 import pe.com.carlosh.tallyapi.expense.dto.ExpenseStatsDTO;
 import pe.com.carlosh.tallyapi.notification.EmailService;
 import pe.com.carlosh.tallyapi.security.JwtService;
+import pe.com.carlosh.tallyapi.tier.Tier;
+import pe.com.carlosh.tallyapi.tier.TierName;
+import pe.com.carlosh.tallyapi.tier.TierRepository;
+import pe.com.carlosh.tallyapi.user.dto.TierInfoDTO;
 import pe.com.carlosh.tallyapi.user.dto.*;
 
 import java.math.BigDecimal;
@@ -41,6 +45,7 @@ public class UserService {
 
     private final VerificationTokenRepository tokenRepository;
     private final EmailService emailService;
+    private final TierRepository tierRepository;
 
     @Transactional
     public void register(UserRequestDTO req) {
@@ -52,7 +57,11 @@ public class UserService {
             throw new PasswordMismatchException("Las contraseñas no coinciden");
         }
 
+        Tier freeTier = tierRepository.findByName(TierName.FREE)
+                .orElseThrow(() -> new ResourceNotFoundException("Default tier not found"));
+
         User user = UserMapper.toEntity(req, passwordEncoder.encode(req.password1()));
+        user.setTier(freeTier);
         userRepository.save(user);
 
         VerificationToken verificationToken = new VerificationToken(user);
@@ -93,6 +102,10 @@ public class UserService {
     }
 
     public UserStatsDTO getStats(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado"));
+        Tier tier = user.getTier();
+
         BigDecimal totalSpent = expenseRepository.sumTotalByUserId(userId);
         BigDecimal thisMonth = expenseRepository.sumTotalByUserIdThisMonth(userId);
         long expenseCount = expenseRepository.countByUserId(userId);
@@ -101,7 +114,7 @@ public class UserService {
         long budgetCount = budgetRepository.countByUserIdAndActiveTrue(userId);
         long exceededCount = budgetRepository.countExceededByUserId(userId);
 
-        long categoryCount = categoryRepository.countByUserIdAndActiveTrue(userId);
+        long categoryCount = categoryRepository.countByUserIdAndActiveTrueAndPredefinedFalse(userId);
 
         String topName = null;
         BigDecimal topSpent = BigDecimal.ZERO;
@@ -115,10 +128,13 @@ public class UserService {
             }
         }
 
+        TierInfoDTO tierInfo = new TierInfoDTO(tier.getName().name(), tier.getMaxCategories(), tier.getMaxBudgets());
+
         return new UserStatsDTO(
-                new BudgetStatsDTO(budgetCount, exceededCount),
+                tierInfo,
+                new BudgetStatsDTO(budgetCount, tier.getMaxBudgets(), exceededCount),
                 new ExpenseStatsDTO(totalSpent, thisMonth, expenseCount),
-                new CategoryStatsDTO(categoryCount, topName, topSpent)
+                new CategoryStatsDTO(categoryCount, tier.getMaxCategories(), topName, topSpent)
         );
     }
 

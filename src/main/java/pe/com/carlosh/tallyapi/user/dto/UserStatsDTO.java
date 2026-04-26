@@ -5,6 +5,7 @@ import pe.com.carlosh.tallyapi.category.dto.CategoryStatsDTO;
 import pe.com.carlosh.tallyapi.expense.dto.ExpenseStatsDTO;
 
 public record UserStatsDTO(
+        TierInfoDTO tier,
         BudgetStatsDTO budgetStats,
         ExpenseStatsDTO expenseStats,
         CategoryStatsDTO categoryStats

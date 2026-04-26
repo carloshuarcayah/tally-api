@@ -10,6 +10,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
+import pe.com.carlosh.tallyapi.tier.Tier;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -60,6 +61,10 @@ public class User implements UserDetails {
 
     @Column(nullable = false)
     private boolean emailVerified;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "tier_id", nullable = false)
+    private Tier tier;
 
 
     public User(String email, String phone, String username, String password, String firstName, String lastName) {

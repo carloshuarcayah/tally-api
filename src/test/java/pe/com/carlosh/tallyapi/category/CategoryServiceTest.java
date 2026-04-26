@@ -62,6 +62,7 @@ class CategoryServiceTest {
     void setUp() {
         user1 = new User("prueba@gmail.com", "968574659", "usuarioprueba", "usuario123", "usuario", "prueba");
         ReflectionTestUtils.setField(user1, "id", USER_ID);
+        user1.setTier(new pe.com.carlosh.tallyapi.tier.Tier(pe.com.carlosh.tallyapi.tier.TierName.FREE, 5, 4));
     }
 
     @Test
@@ -81,6 +82,19 @@ class CategoryServiceTest {
         assertNotNull(response);
         assertEquals("Nueva Cat", response.name());
         verify(categoryRepository, times(1)).save(any(Category.class));
+    }
+
+    @Test
+    @DisplayName("Create Category - Error: throws InvalidOperationException when tier limit reached")
+    void create_ThrowsInvalidOperationException_WhenTierLimitReached() {
+        CategoryRequestDTO req = new CategoryRequestDTO("Sexta", "Desc");
+
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user1));
+        when(categoryRepository.countByUserIdAndActiveTrueAndPredefinedFalse(USER_ID)).thenReturn(5L);
+
+        assertThrows(InvalidOperationException.class, () -> categoryService.create(req, USER_ID));
+
+        verify(categoryRepository, never()).save(any(Category.class));
     }
 
     @Test

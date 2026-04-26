@@ -45,6 +45,7 @@ class UserServiceTest {
     @Mock private CategoryRepository categoryRepository;
     @Mock private VerificationTokenRepository tokenRepository;
     @Mock private EmailService emailService;
+    @Mock private pe.com.carlosh.tallyapi.tier.TierRepository tierRepository;
 
     @InjectMocks
     private UserService userService;
@@ -67,6 +68,8 @@ class UserServiceTest {
 
         when(userRepository.existsByEmail("new@mail.com")).thenReturn(false);
         when(passwordEncoder.encode("password1")).thenReturn("encoded");
+        pe.com.carlosh.tallyapi.tier.Tier freeTier = new pe.com.carlosh.tallyapi.tier.Tier(pe.com.carlosh.tallyapi.tier.TierName.FREE, 5, 4);
+        when(tierRepository.findByName(pe.com.carlosh.tallyapi.tier.TierName.FREE)).thenReturn(java.util.Optional.of(freeTier));
 
         userService.register(req);
 

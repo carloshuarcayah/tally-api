@@ -73,7 +73,7 @@ class BudgetServiceTest {
             Page<Budget> page = new PageImpl<>(List.of(budget));
 
             when(budgetRepository.findByUserIdAndActiveTrue(USER_ID, pageable)).thenReturn(page);
-            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("250.00"));
+            when(expenseRepository.sumTotalByBudgetIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(new BigDecimal("250.00"));
 
             Page<BudgetResponseDTO> result = budgetService.findAll(USER_ID, pageable);
 
@@ -94,7 +94,7 @@ class BudgetServiceTest {
 
             assertEquals(0, result.getTotalElements());
             assertTrue(result.getContent().isEmpty());
-            verify(expenseRepository, never()).sumTotalByBudgetId(any());
+            verify(expenseRepository, never()).sumTotalByBudgetIdAndUserId(any(), any());
         }
 
         @Test
@@ -104,7 +104,7 @@ class BudgetServiceTest {
             Page<Budget> page = new PageImpl<>(List.of(budget));
 
             when(budgetRepository.findByUserIdAndActiveTrue(USER_ID, pageable)).thenReturn(page);
-            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("1200.00"));
+            when(expenseRepository.sumTotalByBudgetIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(new BigDecimal("1200.00"));
 
             Page<BudgetResponseDTO> result = budgetService.findAll(USER_ID, pageable);
 
@@ -123,8 +123,8 @@ class BudgetServiceTest {
             Page<Budget> page = new PageImpl<>(List.of(budget, budget2));
 
             when(budgetRepository.findByUserIdAndActiveTrue(USER_ID, pageable)).thenReturn(page);
-            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("250.00"));
-            when(expenseRepository.sumTotalByBudgetId(101L)).thenReturn(new BigDecimal("400.00"));
+            when(expenseRepository.sumTotalByBudgetIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(new BigDecimal("250.00"));
+            when(expenseRepository.sumTotalByBudgetIdAndUserId(101L, USER_ID)).thenReturn(new BigDecimal("400.00"));
 
             Page<BudgetResponseDTO> result = budgetService.findAll(USER_ID, pageable);
 
@@ -144,7 +144,7 @@ class BudgetServiceTest {
         @DisplayName("Ok: returns budget with spent amount")
         void success() {
             when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
-            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("300.00"));
+            when(expenseRepository.sumTotalByBudgetIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(new BigDecimal("300.00"));
 
             BudgetResponseDTO response = budgetService.findById(BUDGET_ID, USER_ID);
 
@@ -269,7 +269,7 @@ class BudgetServiceTest {
             when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
             when(budgetRepository.existsByUserIdAndNameIgnoreCaseAndActiveTrue(USER_ID, "Nombre Actualizado")).thenReturn(false);
             when(categoryRepository.findByIdAndUserIdAndActiveTrue(CATEGORY_ID, USER_ID)).thenReturn(Optional.of(category));
-            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(new BigDecimal("100.00"));
+            when(expenseRepository.sumTotalByBudgetIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(new BigDecimal("100.00"));
 
             BudgetResponseDTO response = budgetService.update(BUDGET_ID, USER_ID, req);
 
@@ -284,7 +284,7 @@ class BudgetServiceTest {
             BudgetRequestDTO req = new BudgetRequestDTO("Presupuesto Mensual", "Otra desc", new BigDecimal("1500.00"), null);
 
             when(budgetRepository.findByIdAndUserIdAndActiveTrue(BUDGET_ID, USER_ID)).thenReturn(Optional.of(budget));
-            when(expenseRepository.sumTotalByBudgetId(BUDGET_ID)).thenReturn(BigDecimal.ZERO);
+            when(expenseRepository.sumTotalByBudgetIdAndUserId(BUDGET_ID, USER_ID)).thenReturn(BigDecimal.ZERO);
 
             BudgetResponseDTO response = budgetService.update(BUDGET_ID, USER_ID, req);
 

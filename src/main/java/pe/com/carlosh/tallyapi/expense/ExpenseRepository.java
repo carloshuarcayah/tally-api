@@ -25,8 +25,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.user.id = :userId AND e.active = true AND e.category.id=:categoryId")
     BigDecimal sumTotalByUserIdAndCategoryId(@Param("userId")Long userId, @Param("categoryId") Long categoryId);
 
-    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.budget.id = :budgetId AND e.active = true")
-    BigDecimal sumTotalByBudgetId(@Param("budgetId") Long budgetId);
+    @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e WHERE e.budget.id = :budgetId AND e.user.id = :userId AND e.active = true")
+    BigDecimal sumTotalByBudgetIdAndUserId(@Param("budgetId") Long budgetId, @Param("userId") Long userId);
 
     Page<Expense> findByUserIdAndActiveTrueAndBudgetId(Long userId, Long budgetId, Pageable pageable);
 

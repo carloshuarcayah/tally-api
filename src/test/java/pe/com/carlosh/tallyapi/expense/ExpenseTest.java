@@ -246,7 +246,7 @@ class ExpenseServiceTest {
         Page<Expense> page = new PageImpl<>(List.of());
 
         when(expenseRepository.findByUserIdAndActiveTrueAndBudgetId(USER_ID, BUDGET_FOOD_ID, pageable)).thenReturn(page);
-        when(expenseRepository.sumTotalByBudgetId(BUDGET_FOOD_ID)).thenReturn(new BigDecimal("50.00"));
+        when(expenseRepository.sumTotalByBudgetIdAndUserId(BUDGET_FOOD_ID, USER_ID)).thenReturn(new BigDecimal("50.00"));
 
         ExpenseListResponseDTO result = expenseService.findByFilters(USER_ID, null, BUDGET_FOOD_ID, pageable);
 

@@ -30,14 +30,14 @@ public class BudgetService {
     public Page<BudgetResponseDTO> findAll(Long userId, Pageable pageable) {
         return budgetRepository.findByUserIdAndActiveTrue(userId, pageable)
                 .map(budget -> {
-                    BigDecimal spent = expenseRepository.sumTotalByBudgetId(budget.getId());
+                    BigDecimal spent = expenseRepository.sumTotalByBudgetIdAndUserId(budget.getId(), userId);
                     return BudgetMapper.toResponse(budget, spent);
                 });
     }
 
     public BudgetResponseDTO findById(Long id, Long userId) {
         Budget budget = findActiveOrThrow(id, userId);
-        BigDecimal spent = expenseRepository.sumTotalByBudgetId(budget.getId());
+        BigDecimal spent = expenseRepository.sumTotalByBudgetIdAndUserId(budget.getId(), userId);
         return BudgetMapper.toResponse(budget, spent);
     }
 
@@ -86,7 +86,7 @@ public class BudgetService {
         }
 
         budget.update(req.name(), req.description(), req.maxAmount(), category);
-        BigDecimal spent = expenseRepository.sumTotalByBudgetId(budget.getId());
+        BigDecimal spent = expenseRepository.sumTotalByBudgetIdAndUserId(budget.getId(), userId);
 
         return BudgetMapper.toResponse(budget, spent);
     }

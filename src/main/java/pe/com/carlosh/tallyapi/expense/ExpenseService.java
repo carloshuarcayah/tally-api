@@ -92,7 +92,7 @@ public class ExpenseService {
         if (budgetId != null) {
             expenses = expenseRepository.findByUserIdAndActiveTrueAndBudgetId(userId, budgetId, pageable)
                     .map(ExpenseMapper::toResponse);
-            total = expenseRepository.sumTotalByBudgetId(budgetId);
+            total = expenseRepository.sumTotalByBudgetIdAndUserId(budgetId, userId);
         } else if (categoryId != null) {
             expenses = expenseRepository.findByUserIdAndActiveTrueAndCategoryId(userId, categoryId, pageable)
                     .map(ExpenseMapper::toResponse);
